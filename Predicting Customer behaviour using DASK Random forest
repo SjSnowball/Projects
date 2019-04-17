@@ -1,0 +1,174 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt # visualizing data
+import seaborn as sns 
+from matplotlib.pyplot import *
+from collections import Counter
+%matplotlib inline
+import plotly.plotly as py
+from plotly.offline import init_notebook_mode, iplot
+import plotly.graph_objs as go
+import plotly.figure_factory as ff
+import os
+import pandas as pd
+from dask_ml.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from dask_ml.preprocessing import LabelEncoder
+#Starting DASK Scheduler
+from distributed import Client
+client=Client("0.0.0.0:8786")
+print (client)
+#Loading dataset as DASK DATAFRAME
+dataset=pd.read_csv("BlackFriday.csv")	
+dataset1=dd.from_pandas(dataset,npartitions=1)
+print(dataset1) print(dataset1.columns)
+
+#Analysing the dataset
+#Checking proportion of male & female customers purchase transactions
+explode = (0.1,0)  
+fig1, ax1 = plt.subplots(figsize=(12,7))
+ax1.pie(dataset1['Gender'].value_counts(), explode=explode,labels=['Male','Female'], autopct='%1.1f%%',shadow=True, startangle=90)
+# # Equal aspect ratio ensures that pie is drawn as a circle
+ax1.axis('equal')  
+print(plt.tight_layout())
+print(plt.legend())
+print(plt.show())
+
+#Visualizing target age group of stores
+fig1, ax1 = plt.subplots(figsize=(12,7))
+sns.countplot(df['Age'],hue=df['Gender'])
+ 
+fig1, ax1 = plt.subplots(figsize=(12,7))
+print(sns.countplot(dataset1['Age'].compute(),hue=dataset1['Gender'].compute()))
+explode = (0.1, 0, 0)
+fig1, ax1 = plt.subplots(figsize=(12,7))
+ax1.pie(dataset1['City_Category'].value_counts().compute(),explode=explode, labels=dataset1['City_Category'].unique().compute(), autopct='%1.1f%%',
+        shadow=True, startangle=90)
+# Equal aspect ratio ensures that pie is drawn as a circle
+print(ax1.axis('equal'))  
+print(plt.tight_layout())
+print(plt.legend())
+print(plt.show())
+fig1, ax1 = plt.subplots(figsize=(12,7))
+sns.countplot(dataset1['City_Category'].compute(),hue=dataset1['Age'].compute())
+#Analysing the stability of customers in Store
+explode = (0.1, 0)
+fig1, ax1 = plt.subplots(figsize=(12,7))
+ax1.pie(dataset1['Marital_Status'].value_counts().compute(),explode=explode, labels=['Yes','No'], autopct='%1.1f%%',
+        shadow=True, startangle=90)
+# Equal aspect ratio ensures that pie is drawn as a circle
+ax1.axis('equal')  
+plt.tight_layout()
+plt.legend()
+plt.show()
+labels=['First Year','Second Year','Third Year','More Than Four Years','Guest']
+explode = (0.1, 0.1,0,0,0)
+fig1, ax1 = plt.subplots(figsize=(12,7))
+ax1.pie(dataset1.groupby('Stay_In_Current_City_Years')['Purchase'].sum().compute(),explode=explode, labels=labels, autopct='%1.1f%%',
+        shadow=True, startangle=90)
+# Equal aspect ratio ensures that pie is drawn as a circle
+ax1.axis('equal')  
+plt.tight_layout()
+plt.legend()
+plt.show()
+labels=['First Year','Second Year','Third Year','More Than Four Years','Geust']
+label=['Underage 0-17','Retired +55','Middleage 26-35','46-50 y/o','Oldman 51-55','Middleage+ 36-45','Youth']
+explode = (0.1, 0.1,0,0,0)
+fig1, ax1 = plt.subplots(figsize=(12,7))
+ax1.pie(dataset1['Stay_In_Current_City_Years'].value_counts().compute(),explode=explode, labels=labels, autopct='%1.1f%%',
+        shadow=True, startangle=90)
+# Equal aspect ratio ensures that pie is drawn as a circle
+ax1.axis('equal')  
+plt.tight_layout()
+plt.legend()
+plt.show()
+#Relating Purchase power with Occupation
+fig1, ax1 = plt.subplots(figsize=(12,7))
+diagram=dataset1['Occupation'].value_counts().compute()
+diagram.plot('bar')
+fig1, ax1 = plt.subplots(figsize=(12,7))
+diagram1=dataset1.groupby('Product_ID')['Purchase'].count().nlargest(10).compute()#.sort_values().plot('barh')
+diagram1.plot('barh')
+#Visualizing the data details
+print(dataset1.isna().sum().compute())
+#Filling missings data of respective columns with their respective mean values
+dataset1['Product_Category_2']=dataset1['Product_Category_2'].fillna(dataset1['Product_Category_2'].mean()).astype(int)#compute()
+dataset1['Product_Category_3']=dataset1['Product_Category_3'].fillna(dataset1['Product_Category_3'].mean()).astype(int)#.compute()
+dataset1['Product_Category_3']
+#Data Transformation-Encoding
+import dask.dataframe as dd
+#Encoding the Age
+encode1 = LabelEncoder()
+encode1.fit(['0-17','18-25','26-35','36-45','46-50','51-55', '55+'])
+data_test=encode1.transform(dataset1['Age'])
+data_test1=dd.from_dask_array(data_test)
+dataset1['Age']=data_test1.compute()
+print(dataset1['Age']).
+#Encoding the Gender
+encode1.fit(['M','F'])
+data_test2=encode1.transform(dataset1['Gender'])
+data_test3=dd.from_dask_array(data_test2)
+dataset1['Gender']=data_test3.compute()
+print(dataset1['Gender'])
+
+#Encoding the City category
+ encode1.fit(['A','B','C'])
+data_test4= encode1.transform(dataset1['City_Category'])
+data_test5=dd.from_dask_array(data_test4)
+dataset1['City_Category']=data_test5.compute()
+print(dataset1['City_Category'])
+#Encoding the Stability of customers
+encode1.fit(['0','1','2', '3', '4+'])
+data_test6 = encode1.transform(dataset1['Stay_In_Current_City_Years'])
+data_test7=dd.from_dask_array(data_test6)
+dataset1['Stay_In_Current_City_Years']=data_test7
+print(dataset1['Stay_In_Current_City_Years'])
+#Dropping unrequired columns
+dataset1=dataset1.drop(['User_ID', 'Product_ID'],axis=1)
+print(dataset1)
+#Adding the category column
+dataset1['category'] = 999
+category_Size=dataset1['Purchase'].size.compute()
+category=dataset1['category'].compute()
+print(category)
+purchase_data=dataset1['Purchase'].compute()
+for i in range(Category_size):
+    if purchase_data[i]>0 and purchase_data[i]<=6000:
+        category[i]=0
+    elif purchase_data[i]>6000 and purchase_data[i]<=9334:
+        category[i]=1
+    elif purchase_data[i]>9334 and purchase_data[i]<=13000:
+        category[i]=2
+    elif purchase_data[i]>13000 and purchase_data[i]<=24000:
+        category[i]=3
+dataset1['category']=category
+print(dataset1['category'].compute())
+#Assigning training and target data
+X=dataset1[[ u'Gender', u'Age', u'Occupation',
+       u'City_Category', u'Stay_In_Current_City_Years', u'Marital_Status',
+       u'Product_Category_1', u'Product_Category_2', u'Product_Category_3']]
+print(X.size.compute() )
+y=dataset1[[u'category']]
+print(y.size.compute()) 
+#Fitting the model to the data
+def fit(X_train,y_train):
+    model = RandomForestClassifier(n_estimators=100, min_samples_leaf=10, random_state=1)#, min_samples_leaf=2, random_state=1)
+    return model.fit(X_train,y_train)
+estimator= client.submit(fit,X_train,y_train)  
+#Generating predictions for the test set
+def predict(X_train):
+    return k.predict(X_train)
+estimator1= client.submit(predict,X_test)
+size=estimator1.result()
+test_X=size.reshape(-1,1)
+print(resize_data.shape)
+test_y=y_test.compute()
+test_y=test_y.values
+#Computing the model report and  classification Report
+from dask_ml.metrics import accuracy_score
+from sklearn.metrics import classification_report
+def score(test_x, test_y):
+    return accuracy_score(test_x, test_y)
+estimator2= client.submit(score,test_x, test_y)
+print(estimator2.result()*100)
+print("Classification Report:\n"),classification_report(test_x,test_y)
