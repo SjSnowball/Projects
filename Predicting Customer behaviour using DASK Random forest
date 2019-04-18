@@ -1,6 +1,8 @@
 import numpy as np 
 import pandas as pd 
-import matplotlib.pyplot as plt # visualizing data
+import matplotlib.pyplot as plt
+
+# visualizing data
 import seaborn as sns 
 from matplotlib.pyplot import *
 from collections import Counter
@@ -14,10 +16,12 @@ import pandas as pd
 from dask_ml.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from dask_ml.preprocessing import LabelEncoder
+
 #Starting DASK Scheduler
 from distributed import Client
 client=Client("0.0.0.0:8786")
 print (client)
+
 #Loading dataset as DASK DATAFRAME
 dataset=pd.read_csv("BlackFriday.csv")	
 dataset1=dd.from_pandas(dataset,npartitions=1)
@@ -44,6 +48,7 @@ explode = (0.1, 0, 0)
 fig1, ax1 = plt.subplots(figsize=(12,7))
 ax1.pie(dataset1['City_Category'].value_counts().compute(),explode=explode, labels=dataset1['City_Category'].unique().compute(), autopct='%1.1f%%',
         shadow=True, startangle=90)
+
 # Equal aspect ratio ensures that pie is drawn as a circle
 print(ax1.axis('equal'))  
 print(plt.tight_layout())
@@ -51,6 +56,7 @@ print(plt.legend())
 print(plt.show())
 fig1, ax1 = plt.subplots(figsize=(12,7))
 sns.countplot(dataset1['City_Category'].compute(),hue=dataset1['Age'].compute())
+
 #Analysing the stability of customers in Store
 explode = (0.1, 0)
 fig1, ax1 = plt.subplots(figsize=(12,7))
@@ -91,12 +97,15 @@ diagram1=dataset1.groupby('Product_ID')['Purchase'].count().nlargest(10).compute
 diagram1.plot('barh')
 #Visualizing the data details
 print(dataset1.isna().sum().compute())
+
 #Filling missings data of respective columns with their respective mean values
 dataset1['Product_Category_2']=dataset1['Product_Category_2'].fillna(dataset1['Product_Category_2'].mean()).astype(int)#compute()
 dataset1['Product_Category_3']=dataset1['Product_Category_3'].fillna(dataset1['Product_Category_3'].mean()).astype(int)#.compute()
 dataset1['Product_Category_3']
+
 #Data Transformation-Encoding
 import dask.dataframe as dd
+
 #Encoding the Age
 encode1 = LabelEncoder()
 encode1.fit(['0-17','18-25','26-35','36-45','46-50','51-55', '55+'])
@@ -104,6 +113,7 @@ data_test=encode1.transform(dataset1['Age'])
 data_test1=dd.from_dask_array(data_test)
 dataset1['Age']=data_test1.compute()
 print(dataset1['Age']).
+
 #Encoding the Gender
 encode1.fit(['M','F'])
 data_test2=encode1.transform(dataset1['Gender'])
@@ -143,6 +153,7 @@ for i in range(Category_size):
         category[i]=3
 dataset1['category']=category
 print(dataset1['category'].compute())
+
 #Assigning training and target data
 X=dataset1[[ u'Gender', u'Age', u'Occupation',
        u'City_Category', u'Stay_In_Current_City_Years', u'Marital_Status',
@@ -150,11 +161,13 @@ X=dataset1[[ u'Gender', u'Age', u'Occupation',
 print(X.size.compute() )
 y=dataset1[[u'category']]
 print(y.size.compute()) 
+
 #Fitting the model to the data
 def fit(X_train,y_train):
     model = RandomForestClassifier(n_estimators=100, min_samples_leaf=10, random_state=1)#, min_samples_leaf=2, random_state=1)
     return model.fit(X_train,y_train)
 estimator= client.submit(fit,X_train,y_train)  
+
 #Generating predictions for the test set
 def predict(X_train):
     return k.predict(X_train)
